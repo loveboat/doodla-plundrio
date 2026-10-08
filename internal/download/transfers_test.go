@@ -120,6 +120,26 @@ func TestBuildTransferFileManifestRejectsUnsafeOrCollidingPaths(t *testing.T) {
 	}
 }
 
+func TestBuildTransferFileManifestKeepsSameNamedFilesInSubdirectories(t *testing.T) {
+	transfer := &putio.Transfer{ID: 101, Name: "Show.S01"}
+
+	manifest, err := buildTransferFileManifest(transfer, []*putio.File{
+		{Name: "Subs/Show.S01E01/2_eng.srt", Size: 1},
+		{Name: "Subs/Show.S01E02/2_eng.srt", Size: 2},
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []TransferFile{
+		{Name: "Show.S01/Subs/Show.S01E01/2_eng.srt", Length: 1},
+		{Name: "Show.S01/Subs/Show.S01E02/2_eng.srt", Length: 2},
+	}
+	if !reflect.DeepEqual(manifest, want) {
+		t.Fatalf("manifest = %+v, want %+v", manifest, want)
+	}
+}
+
 func TestProcessTransferManifestFailureIsMarkedFailed(t *testing.T) {
 	client := &fakePutioClient{allTransferFiles: []*putio.File{
 		{ID: 11, Name: "same.m4b", Size: 3},
