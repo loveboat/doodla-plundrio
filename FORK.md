@@ -1,4 +1,4 @@
-# loveboat/doodla-plundrio
+# loveboat/elsbrock-plundrio
 
 Fork of [elsbrock/plundrio](https://github.com/elsbrock/plundrio) carrying one
 fix until it lands upstream.
@@ -19,7 +19,7 @@ idea on current upstream instead.
 ## Building
 
 ```bash
-docker build --build-arg VERSION=0.11.2-subdirs.1 -t doodla-plundrio:0.11.2-subdirs.1 .
+docker build --build-arg VERSION=0.11.2-subdirs.1 -t elsbrock-plundrio:0.11.2-subdirs.1 .
 ```
 
 `Dockerfile` is fork-only; upstream builds with Nix (`flake.nix`).
