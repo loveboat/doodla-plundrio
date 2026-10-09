@@ -13,20 +13,38 @@ import (
 
 func TestHandleTorrentGetUsesTransmissionErrorFields(t *testing.T) {
 	tests := []struct {
-		name        string
-		errorString string
-		wantError   int
+		name            string
+		status          string
+		errorString     string
+		wantError       int
+		wantErrorString string
 	}{
-		{name: "healthy", wantError: 0},
+		{name: "healthy", status: "DOWNLOADING", wantError: 0},
 		{
-			name:        "sustained zero progress",
-			errorString: "Put.io transfer stalled: no byte progress for 6h0m0s; inspect the transfer in Put.io",
-			wantError:   3,
+			name:            "sustained zero progress",
+			status:          "DOWNLOADING",
+			errorString:     "Put.io transfer stalled: no byte progress for 6h0m0s; inspect the transfer in Put.io",
+			wantError:       3,
+			wantErrorString: "Put.io transfer stalled: no byte progress for 6h0m0s; inspect the transfer in Put.io",
 		},
 		{
-			name:        "Put.io error",
-			errorString: "source unavailable",
-			wantError:   3,
+			name:            "Put.io error",
+			status:          "DOWNLOADING",
+			errorString:     "source unavailable",
+			wantError:       3,
+			wantErrorString: "source unavailable",
+		},
+		{
+			name:        "stale Put.io error on completed transfer",
+			status:      "COMPLETED",
+			errorString: "You need 6.9 G free space to start this transfer.",
+			wantError:   0,
+		},
+		{
+			name:        "stale Put.io error on seeding transfer",
+			status:      "SEEDING",
+			errorString: "You need 6.9 G free space to start this transfer.",
+			wantError:   0,
 		},
 	}
 
@@ -36,7 +54,7 @@ func TestHandleTorrentGetUsesTransmissionErrorFields(t *testing.T) {
 				ID:           42,
 				Hash:         "hash",
 				Name:         "example",
-				Status:       "DOWNLOADING",
+				Status:       tt.status,
 				ErrorMessage: tt.errorString,
 			}
 			service := &torrentAddDownloadService{
@@ -58,8 +76,8 @@ func TestHandleTorrentGetUsesTransmissionErrorFields(t *testing.T) {
 			if got := torrents[0]["error"]; got != tt.wantError {
 				t.Errorf("error = %#v, want %d", got, tt.wantError)
 			}
-			if got := torrents[0]["errorString"]; got != tt.errorString {
-				t.Errorf("errorString = %#v, want %q", got, tt.errorString)
+			if got := torrents[0]["errorString"]; got != tt.wantErrorString {
+				t.Errorf("errorString = %#v, want %q", got, tt.wantErrorString)
 			}
 		})
 	}

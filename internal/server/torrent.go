@@ -363,6 +363,11 @@ func (s *Server) handleTorrentGet(_ context.Context, args json.RawMessage) (inte
 		}
 		errorCode := trErrorNone
 		errorString := t.ErrorMessage
+		// Put.io keeps a transfer's error message after the transfer recovers
+		// (e.g. "You need ... free space"), so a finished one reports none.
+		if t.Status == "COMPLETED" || t.Status == "SEEDING" {
+			errorString = ""
+		}
 		if transferCtx != nil {
 			if localErr := transferCtx.GetError(); localErr != nil {
 				errorString = localErr.Error()
