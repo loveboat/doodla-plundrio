@@ -44,6 +44,16 @@ docker build --build-arg VERSION=0.11.2-subdirs.4 -t elsbrock-plundrio:0.11.2-su
 
 ## Keeping up to date
 
+A daily workflow (`.github/workflows/upstream-check.yml`) compares this fork
+with `elsbrock/plundrio` and opens an issue, "Upstream elsbrock/plundrio is
+ahead of the fork", when upstream has commits we lack. It closes the issue
+once we are level. It never merges anything. Run it by hand from the Actions
+tab; the `base` input compares against another branch or tag, which is how to
+test the issue path. Scheduled workflows on public repos are paused after 60
+days without repo activity; re-enable it in the Actions tab if that happens.
+
+To update:
+
 ```bash
 git fetch upstream
 git merge upstream/main
