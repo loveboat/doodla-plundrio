@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/elsbrock/go-putio"
@@ -100,6 +101,67 @@ func TestProcessTransferPersistsExactFileManifest(t *testing.T) {
 	}
 	if !ok || !reflect.DeepEqual(got, want) {
 		t.Fatalf("manifest = %+v, exists=%v, want %+v", got, ok, want)
+	}
+}
+
+func TestProcessTransferRefusesTransfersContainingExecutables(t *testing.T) {
+	tests := []struct {
+		name  string
+		files []*putio.File
+	}{
+		{name: "only an executable", files: []*putio.File{{ID: 11, Name: "Show.S01E01.1080p.exe", Size: 3}}},
+		{name: "executable beside a video", files: []*putio.File{
+			{ID: 11, Name: "Show.S01E01.mkv", Size: 3},
+			{ID: 12, Name: "codec-setup.exe", Size: 6},
+		}},
+		{name: "upper-case extension", files: []*putio.File{{ID: 11, Name: "SETUP.EXE", Size: 3}}},
+		{name: "batch script in a subfolder", files: []*putio.File{
+			{ID: 11, Name: "Show.S01E01.mkv", Size: 3},
+			{ID: 12, Name: "extras/play.bat", Size: 6},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := newTestProcessor(t, 100, false, &fakePutioClient{allTransferFiles: tt.files})
+			transfer := &putio.Transfer{ID: 101, Name: "Show.S01E01", FileID: 500}
+
+			p.processTransfer(transfer)
+
+			ctx, ok := p.manager.coordinator.GetTransferContext(101)
+			if !ok {
+				t.Fatal("expected the refused transfer to stay tracked")
+			}
+			if state := ctx.GetState(); state != TransferLifecycleFailed {
+				t.Errorf("state = %s, want Failed", state)
+			}
+			if err := ctx.GetError(); err == nil || !strings.Contains(err.Error(), "executable") {
+				t.Errorf("error = %v, want a message naming the executable", err)
+			}
+			if _, ok := p.manager.transferFiles.Get(101); ok {
+				t.Error("a refused transfer must not get a file manifest")
+			}
+		})
+	}
+}
+
+func TestProcessTransferAllowsHarmlessExtras(t *testing.T) {
+	p := newTestProcessor(t, 100, false, &fakePutioClient{allTransferFiles: []*putio.File{
+		{ID: 11, Name: "Show.S01E01.mkv", Size: 3},
+		{ID: 12, Name: "Show.S01E01.srt", Size: 1},
+		{ID: 13, Name: "How to play HEVC (THIS FILE).txt", Size: 1},
+		{ID: 14, Name: "Ninite K-Lite Codecs Installer.website", Size: 1},
+		{ID: 15, Name: "folder.jpg", Size: 1},
+	}})
+	transfer := &putio.Transfer{ID: 101, Name: "Show.S01E01", FileID: 500}
+
+	p.processTransfer(transfer)
+
+	if _, ok := p.manager.transferFiles.Get(101); !ok {
+		t.Fatal("expected a manifest for a transfer with only harmless extras")
+	}
+	if ctx, ok := p.manager.coordinator.GetTransferContext(101); !ok || ctx.GetState() == TransferLifecycleFailed {
+		t.Fatalf("transfer should not be refused, tracked=%v", ok)
 	}
 }
 

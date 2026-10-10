@@ -38,3 +38,11 @@ func NewNoFilesFoundError(transferID int64) error {
 		Message: fmt.Sprintf("No files found for transfer %d", transferID),
 	}
 }
+
+// NewExecutableFoundError creates a new error for transfers holding an executable
+func NewExecutableFoundError(fileName string) error {
+	return &DownloadError{
+		Type:    "ExecutableFound",
+		Message: fmt.Sprintf("Refusing to download: transfer contains an executable file (%s)", fileName),
+	}
+}

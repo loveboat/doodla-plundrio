@@ -526,6 +526,16 @@ func (p *TransferProcessor) prepareTransfer(transfer *putio.Transfer) ([]*putio.
 		return nil, nil
 	}
 
+	if executable := firstExecutable(files); executable != "" {
+		log.Warn("transfers").
+			Int64("transfer_id", transfer.ID).
+			Str("transfer_name", transfer.Name).
+			Str("file", executable).
+			Msg("Refusing to download transfer containing an executable")
+		p.failInitializedTransfer(transfer.ID, NewExecutableFoundError(executable))
+		return nil, nil
+	}
+
 	manifest, err := buildTransferFileManifest(transfer, files)
 	if err != nil {
 		log.Error("transfers").
