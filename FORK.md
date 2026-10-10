@@ -37,7 +37,7 @@ Remove the queue item with "remove from download client" and blocklist
 ## Building
 
 ```bash
-docker build --build-arg VERSION=0.11.2-subdirs.3 -t elsbrock-plundrio:0.11.2-subdirs.3 .
+docker build --build-arg VERSION=0.11.2-subdirs.4 -t elsbrock-plundrio:0.11.2-subdirs.4 .
 ```
 
 `Dockerfile` is fork-only; upstream builds with Nix (`flake.nix`).
