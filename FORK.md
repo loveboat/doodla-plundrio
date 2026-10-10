@@ -1,7 +1,7 @@
 # loveboat/elsbrock-plundrio
 
-Fork of [elsbrock/plundrio](https://github.com/elsbrock/plundrio) carrying two
-fixes until they land upstream.
+Fork of [elsbrock/plundrio](https://github.com/elsbrock/plundrio) carrying
+three fixes until they land upstream.
 
 ## Why
 
@@ -24,10 +24,20 @@ finished download as a warning and never import it. The fix drops put.io's
 error once the transfer is `COMPLETED` or `SEEDING`; local errors are still
 reported (`fix(server): ignore stale put.io error on finished transfers`).
 
+**Executables posing as episodes.** Fake torrents arrive as a release named
+like a normal episode whose only file is an `.exe`; the name gives nothing
+away, so Sonarr and Radarr cannot filter it. plundrio lists a transfer's files
+before copying anything, so it now refuses a transfer containing a file with an
+executable extension (`.exe`, `.bat`, `.cmd`, `.scr`, `.msi`, `.lnk`, `.vbs`,
+`.jar`, `.ps1`, `.pif`). Nothing is copied, the transfer is marked failed, and
+the message shows in the Sonarr/Radarr queue as a download-client warning.
+Remove the queue item with "remove from download client" and blocklist
+(`fix(download): refuse transfers that contain an executable`).
+
 ## Building
 
 ```bash
-docker build --build-arg VERSION=0.11.2-subdirs.2 -t elsbrock-plundrio:0.11.2-subdirs.2 .
+docker build --build-arg VERSION=0.11.2-subdirs.3 -t elsbrock-plundrio:0.11.2-subdirs.3 .
 ```
 
 `Dockerfile` is fork-only; upstream builds with Nix (`flake.nix`).
@@ -40,4 +50,4 @@ git merge upstream/main
 go test ./...
 ```
 
-Drop this fork once upstream has both fixes.
+Drop this fork once upstream has all three fixes.
